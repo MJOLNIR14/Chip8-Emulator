@@ -29,6 +29,8 @@ public class Chip{
         keys = new byte[16];
 
         display = new byte[64*32];
+        display[0] = 1;
+        display[130] = 1;
     }
     public void run(){
         //opcode
