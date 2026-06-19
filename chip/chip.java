@@ -37,6 +37,7 @@ public class Chip{
         display = new byte[64*32];
 
         needRedraw = false;
+        loadFontset();
         
         display[0] = 1;
         display[130] = 1;
@@ -136,6 +137,11 @@ public class Chip{
                 } catch(IOException ex){
 
                 }
+            }
+        }
+        public void loadFontset(){
+            for(int i=0; i<ChipData.fontset.length; i++){
+                memory[0x50 + i] = (char)(ChipData.fontset[i] & 0xF00);
             }
         }
     }
