@@ -82,7 +82,6 @@ public class Chip{
             stackPointer++;
             pc = (char)(opcode & 0x0FFF);
             System.out.println("Calling " + Integer.toHexString(pc).toUpperCase() + " from " + Integer.toHexString(stack[stackPointer-1]).toUpperCase());
-            pc += 2;
             break;
 
         case 0x3000: {//skip next instruction if Vx == nn
@@ -112,7 +111,7 @@ public class Chip{
         }
         
         case 0x6000: //set Vx = nn
-            byte x = (byte)((opcode & 0x0F00) >> 8);
+            int x = ((opcode & 0x0F00) >> 8);
             System.out.println("x: " + x);
             V[x] = (char)(opcode & 0x00FF);
             pc += 2;
@@ -215,6 +214,7 @@ public class Chip{
                 }
                 break; 
             }
+            break;
         default:
             System.err.println("Unsupported opcode!");
             System.exit(0);
@@ -232,35 +232,50 @@ public class Chip{
     public void removeRedrawFlag(){
         needRedraw = false;
     }
-    public void loadProgram(String file){
-        DataInputStream input = null;
+
+    public void loadProgram(String file){ //what??
+        java.io.BufferedReader reader = null;
         try{
-            input = new DataInputStream(new FileInputStream(file));
-
-            int offset = 0;
-            while(input.available() > 0){
-
-                memory[0x200 + offset] = (char)(input.readByte() & 0xFF);
-
-                offset++;
+            reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            StringBuilder hexString = new StringBuilder();
+            String line;
+            
+            // Read text lines and strip away any spaces
+            while((line = reader.readLine()) != null){
+                hexString.append(line.trim().replaceAll("\\s+", ""));
             }
 
-        } catch(IOException e){
-            e.printStackTrace();
+            String program = hexString.toString();
+            int offset = 0;
+            
+            // Group the characters into pairs and parse them as hex numbers
+            for(int i = 0; i < program.length(); i += 2){
+                if(i + 2 <= program.length()){
+                    String byteHex = program.substring(i, i + 2);
+                    int byteVal = Integer.parseInt(byteHex, 16);
+                    memory[0x200 + offset] = (char) (byteVal & 0xFF);
+                    offset++;
+                }
+            }
+            System.out.println("Successfully loaded " + offset + " instructions from text file.");
+
+        } catch (IOException | NumberFormatException e){
+            System.err.println("Error parsing hex file: " + e.getMessage());
             System.exit(0);
         } finally{
-            if(input != null){
-                try{
-                    input.close();
-                } catch(IOException ex){
+            if (reader != null){
+                try{ 
+                    reader.close(); 
+                } 
+                catch (IOException ex){
 
                 }
             }
         }
     }
-        public void loadFontset(){
-            for(int i=0; i<ChipData.fontset.length; i++){
-                memory[0x50 + i] = (char)(ChipData.fontset[i] & 0xFF);
-            }
+    public void loadFontset(){
+        for(int i=0; i<ChipData.fontset.length; i++){
+            memory[0x50 + i] = (char)(ChipData.fontset[i] & 0xFF);
         }
+    }
 } 
