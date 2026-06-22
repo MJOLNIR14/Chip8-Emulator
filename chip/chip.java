@@ -97,6 +97,19 @@ public class Chip{
             }
             break;
         }
+
+        case 0x4000: { // skip next instruction if Vx != nn (SNE Vx, byte)
+            int x = (opcode & 0x0F00) >> 8;
+            int nn = opcode & 0x00FF;
+            if (V[x] != nn) {
+                pc += 4;
+                System.out.println("Skipping next instruction (V[" + x + "] != " + nn + ")");
+            } else {
+                pc += 2;
+                System.out.println("Not skipping next instruction (V[" + x + "] == " + nn + ")");
+            }
+            break;
+        }
         
         case 0x6000: //set Vx = nn
             byte x = (byte)((opcode & 0x0F00) >> 8);
@@ -158,6 +171,50 @@ public class Chip{
             break;
         }
 
+        case 0xF000:
+            switch(opcode & 0x00FF){
+
+                case 0x29: { //set I to the location of the sprite for the character in Vx (frontset)
+                    int Fx = (opcode & 0x0F00) >> 8;
+                    int character = V[Fx];
+                    I = (char)(0x50 + (character * 5));
+                    System.out.println("Setting I to the character V[" + Fx + "] = " + (int)V[Fx] + "Offset to" + Integer.toHexString(I).toUpperCase());
+                    pc += 2;
+                    break;
+                }
+
+                case 0x33:{ //Fx33 store a binary-coded decimal representation of VX at I, I+1, and I+2
+                    int Fx = (opcode & 0x0F00) >> 8;
+                    int value = V[Fx];
+
+                    int hundreds = (value - (value % 100)) / 100;
+                    value -= hundreds * 100;
+                    int tens = (value - (value % 10)) / 10;
+                    value -= tens * 10;
+                    memory[I] = (char)hundreds;
+                    memory[I+1] = (char)tens;
+                    memory[I+2] = (char)value;
+                    System.out.println("Storing BCD V[" + Fx + "] = " + (int)V[(opcode & 0x0F00) >> 8] + " as { " + hundreds + ", " + tens + ", " + value + " } at I, I+1, I+2");
+                    pc += 2;
+                    break;
+                }
+
+                case 0x65: { //Fx65 Fills V0 to Vx with values from I
+                    int Fx = (opcode & 0x0F00) >> 8;
+                    for(int i=0; i<=Fx; i++){
+                        V[i] = memory[I+i];
+                    }
+                    System.out.println("Filling V[0] to V[" + Fx + "] to the values of memory[0x" + Integer.toHexString(I & 0xFFFF).toUpperCase() + "]");
+                    pc += 2;
+                    break;
+                }
+
+                default: {
+                    System.err.println("Unsupported opcode!");
+                    System.exit(0);
+                }
+                break; 
+            }
         default:
             System.err.println("Unsupported opcode!");
             System.exit(0);
