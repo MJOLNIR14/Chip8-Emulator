@@ -22,7 +22,7 @@ public class Main extends Thread{
                 chip8.removeRedrawFlag();
             }
             try{
-                Thread.sleep(16);
+                Thread.sleep(64);
             }catch(InterruptedException e){
                 //unthrown exception
             }
